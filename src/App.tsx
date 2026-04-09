@@ -152,7 +152,15 @@ export default function App() {
         throw new Error(data.error || 'Failed to analyze');
       }
       
-      setAnalysisResult(data.text || 'No recommendations found.');
+      const resultText = data.text || '{}';
+      setAnalysisResult(resultText);
+      
+      try {
+        const parsed = JSON.parse(resultText);
+        setSelections(parsed);
+      } catch (e) {
+        console.error("Failed to parse analysis result as JSON:", e);
+      }
     } catch (error) {
       console.error("Analysis failed:", error);
       setAnalysisResult(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
