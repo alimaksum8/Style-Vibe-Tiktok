@@ -259,7 +259,15 @@ export default function App() {
           {analysisResult && (
             <div className="bg-slate-900 p-4 rounded-xl mb-4 border border-slate-700">
               <h4 className="text-sm font-semibold text-slate-400 uppercase mb-2">Rekomendasi Pilihan Tag:</h4>
-              <p className="text-sm text-slate-300 font-mono">{analysisResult}</p>
+              <pre className="text-sm text-slate-300 font-mono whitespace-pre-wrap">
+                {(() => {
+                  try {
+                    return JSON.stringify(JSON.parse(analysisResult), null, 2);
+                  } catch {
+                    return analysisResult;
+                  }
+                })()}
+              </pre>
             </div>
           )}
           
