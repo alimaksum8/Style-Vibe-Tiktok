@@ -145,11 +145,17 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: aiPrompt }),
       });
+      
       const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to analyze');
+      }
+      
       setAnalysisResult(data.text || 'No recommendations found.');
     } catch (error) {
       console.error("Analysis failed:", error);
-      alert("Analysis failed. Please check your connection.");
+      setAnalysisResult(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setAnalyzing(false);
     }
