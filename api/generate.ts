@@ -11,7 +11,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { prompt } = req.body;
     const response = await ai.models.generateContent({
-      model: "models/gemini-1.5-flash-lite-preview",
+      model: "gemini-1.5-flash",
       contents: prompt,
     });
     res.status(200).json({ text: response.text });
