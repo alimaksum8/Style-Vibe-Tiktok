@@ -6,9 +6,6 @@
 import { useState } from 'react';
 import { Copy, Sparkles, Wand2, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 const options = {
   genre: ['Pop', 'Indie', 'EDM', 'Dangdut', 'Lo-fi', 'Rock', 'Hip Hop', 'Orchestral', 'Trap', 'Dubstep', 'Fusion', '808 Bass', 'Future Bass', 'Afrobeats', 'Bassoon', 'TR-909', 'Megah', 'Pad', 'Synthesizer', 'Subito/Surprise', 'Bass Hits', 'Bass Kejut', 'Phonk', 'Wobble Bass', 'Drum Machine', 'Drum', 'Soul', 'Neo-soul', 'Drum Bass', 'Sub Bass', 'heavy metal', 'Snare Drum', 'Contra Bass', 'Vibe Bass', 'Bass Build Up', 'String Violin build up', 'String Cello build up', 'String Glissando build up', 'String Rise build up', 'Brass French Horn build up', 'Brass Trombone build up', 'Taiko Drum drum Jepang', 'Percussion cinematic impact hit', 'Timpani / drum cinematic', 'riser + string + brass'],
@@ -73,6 +70,9 @@ const vibePresets: Record<string, Record<string, string[]>> = {
 
 export default function App() {
   const [lyrics, setLyrics] = useState('');
+  const [youtubeLink, setYoutubeLink] = useState('');
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
   const [selections, setSelections] = useState<Record<string, string[]>>({
     genre: [], intro: [], moods: [], ekspresi: [], effects: [], vocals: [], tempo: []
   });
@@ -115,6 +115,44 @@ export default function App() {
       randomSelections[key] = [opts[Math.floor(Math.random() * opts.length)]];
     });
     setSelections(randomSelections);
+  };
+
+  const analyzeYouTubeLink = async () => {
+    if (!youtubeLink.trim()) {
+      alert('Please enter a YouTube link!');
+      return;
+    }
+    setAnalyzing(true);
+    try {
+      const aiPrompt = `Analyze the following YouTube video link: ${youtubeLink}.
+      Based on the content of the video, recommend the best music tags from the following list for each category:
+      ${JSON.stringify(options)}
+      
+      Return the recommended tags in a JSON format:
+      {
+        "genre": [],
+        "intro": [],
+        "moods": [],
+        "ekspresi": [],
+        "effects": [],
+        "vocals": [],
+        "tempo": []
+      }
+      Only return the JSON.`;
+      
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt }),
+      });
+      const data = await response.json();
+      setAnalysisResult(data.text || 'No recommendations found.');
+    } catch (error) {
+      console.error("Analysis failed:", error);
+      alert("Analysis failed. Please check your connection.");
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   const generate = async () => {
@@ -164,15 +202,16 @@ export default function App() {
       
       The goal is to format the user's EXACT lyrics into a TikTok-ready structure without any creative expansion, with dynamic BPMs per section.`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: aiPrompt,
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt }),
       });
-
-      setOutput({ style: stylePrompt, lyrics: response.text || '' });
+      const data = await response.json();
+      setOutput({ style: stylePrompt, lyrics: data.text || '' });
     } catch (error) {
       console.error("AI Generation failed:", error);
-      alert("AI Generation failed. Please check your connection or API key.");
+      alert("AI Generation failed. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -203,6 +242,26 @@ export default function App() {
             placeholder="Enter your lyrics here..."
             className="w-full h-32 bg-slate-900 border border-slate-700 rounded-xl p-4 text-slate-100 focus:ring-2 focus:ring-purple-500 outline-none mb-4"
           />
+          
+          <div className="flex gap-2 mb-4">
+            <input
+              type="text"
+              value={youtubeLink}
+              onChange={(e) => setYoutubeLink(e.target.value)}
+              placeholder="Paste YouTube link here..."
+              className="flex-grow bg-slate-900 border border-slate-700 rounded-xl p-4 text-slate-100 focus:ring-2 focus:ring-purple-500 outline-none"
+            />
+            <button onClick={analyzeYouTubeLink} className="px-6 py-3 bg-purple-600 rounded-xl font-bold text-white hover:bg-purple-700 transition">
+              {analyzing ? 'Analyzing...' : 'Analisis'}
+            </button>
+          </div>
+
+          {analysisResult && (
+            <div className="bg-slate-900 p-4 rounded-xl mb-4 border border-slate-700">
+              <h4 className="text-sm font-semibold text-slate-400 uppercase mb-2">Rekomendasi Pilihan Tag:</h4>
+              <p className="text-sm text-slate-300 font-mono">{analysisResult}</p>
+            </div>
+          )}
           
           <div className="space-y-3">
             <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Quick Presets: TikTok Vibes</h3>
