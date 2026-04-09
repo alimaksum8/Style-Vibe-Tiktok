@@ -192,6 +192,7 @@ export default function App() {
         <p className="text-slate-400 text-lg font-medium">
           The <span className="text-pink-500">Only</span> AI Music Generator for TikTok Gen Z Viral Hits
         </p>
+        <p className="text-slate-500 text-sm mt-2 font-mono">DEVELOPER: ALI MAKSUM</p>
       </header>
 
       <main className="max-w-4xl mx-auto space-y-8">
