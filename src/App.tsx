@@ -138,7 +138,7 @@ export default function App() {
         "vocals": [],
         "tempo": []
       }
-      Only return the JSON.`;
+      Only return the JSON. Do not include any markdown formatting or extra text.`;
       
       const response = await fetch('/api/analyze', {
         method: 'POST',

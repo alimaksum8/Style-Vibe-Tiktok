@@ -14,7 +14,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       model: "gemini-1.5-flash",
       contents: prompt,
     });
-    res.status(200).json({ text: response.text });
+    
+    // Ensure we send back the text content directly
+    const text = response.text || '';
+    res.status(200).json({ text });
   } catch (error) {
     console.error("Analysis failed:", error);
     res.status(500).json({ error: "Analysis failed" });
