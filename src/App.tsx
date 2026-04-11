@@ -187,7 +187,7 @@ export default function App() {
         Vocals: ${selections.vocals.join(', ')}. 
         Tempo: ${selections.tempo.join(', ')}. 
         Intro: ${selections.intro.join(', ')}. 
-        Production Rules: Heavy 808s, crisp high-end, catchy earworm hooks, 15-60s viral segment focus, modern Gen Z sound design, high quality, trending TikTok audio texture.`.substring(0, 1000);
+        Production Rules: Heavy 808s, crisp high-end, catchy earworm hooks, 15-60s viral segment focus, modern Gen Z sound design, high quality, trending TikTok audio texture.`.substring(0, 950);
       
       const aiPrompt = `You are a TikTok Gen Z music expert. 
       Your task is to take the user's lyrics and ONLY add structure tags and style instructions.
@@ -341,7 +341,7 @@ export default function App() {
             <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl relative">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="font-bold">Style Musik Prompt</h3>
-                <span className="text-xs text-slate-500">{output.style.length}/1000</span>
+                <span className="text-xs text-slate-500">{output.style.length}/950</span>
               </div>
               <textarea readOnly value={output.style} className="w-full h-24 bg-slate-900 border border-slate-700 rounded-xl p-4 text-sm font-mono" />
               <button onClick={() => copy(output.style)} className="absolute top-8 right-8 p-2 bg-slate-800 rounded-lg hover:bg-slate-700"><Copy size={16} /></button>
