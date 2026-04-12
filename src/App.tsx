@@ -1,182 +1,121 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Wand2, 
+  RefreshCw, 
+  Copy, 
+  Youtube, 
+  Sparkles, 
+  Music, 
+  Zap, 
+  Check, 
+  Info
+} from 'lucide-react';
+import { GoogleGenAI } from "@google/genai";
 
-import { useState } from 'react';
-import { Copy, Sparkles, Wand2, RefreshCw } from 'lucide-react';
-import { motion } from 'motion/react';
+// Initialize Gemini
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
-const options = {
-  genre: ['Pop', 'Indie', 'EDM', 'Dangdut', 'Lo-fi', 'Rock', 'Hip Hop', 'Orchestral', 'Trap', 'Dubstep', 'Fusion', '808 Bass', 'Future Bass', 'Afrobeats', 'Bassoon', 'TR-909', 'Megah', 'Pad', 'Synthesizer', 'Subito/Surprise', 'Bass Hits', 'Bass Kejut', 'Phonk', 'Wobble Bass', 'Drum Machine', 'Drum', 'Soul', 'Neo-soul', 'Drum Bass', 'Sub Bass', 'heavy metal', 'Snare Drum', 'Contra Bass', 'Vibe Bass', 'Bass Build Up', 'String Violin build up', 'String Cello build up', 'String Glissando build up', 'String Rise build up', 'Brass French Horn build up', 'Brass Trombone build up', 'Taiko Drum drum Jepang', 'Percussion cinematic impact hit', 'Timpani / drum cinematic', 'riser + string + brass'],
-  intro: ['Slow piano', 'Viral TikTok intro', 'Beat drop', 'Ambient pad', 'Cinematic opening', 'Phonk cowbell', 'Glitchy vocal chop', 'Lo-fi vinyl crackle', 'Bass-boosted riser', 'Sped-up chipmunk vocal', 'Minimalist trap hi-hats', 'Retro synthwave arpeggio', 'ASMR whisper start'],
-  moods: ['Sad', 'Happy', 'Broken', 'Romantic', 'Chill', 'Energetic', 'Dark', 'Dreamy', 'Epik', 'Melankolis', 'Membangkitkan Semangat', 'Agresif', 'Bermimpi', 'Gelap', 'Enerjik', 'Sinematik', 'Santai', 'Menyeramkan', 'Nostalgia', 'Penuh Harapan', 'Marah', 'Tenang', 'Misterius', 'Ethereal', 'Trippy', 'AnehLounge', 'Megah', 'Itens', 'Peaceful', 'Seksi', 'Heroik', 'Gotik', 'Cemas', 'Psikedelik', 'Minimalis', 'Sensual', 'Canggih', 'Epic / Dramatic Instrumental', 'Modern Classical'],
-  ekspresi: ['Emotional', 'Powerful', 'Soft', 'Whisper', 'Aggressive', 'Melancholic', 'Appassionato Penuh Gairah', 'Dolce Manis & Lembut', 'Lacrimoso Penuh Air Mata', 'Con Fuoco Berapi-api', 'Cantabile Seperti Menyanyi', 'Maestoso Agung/Mulia', 'Espressivo Ekspresif', 'Agitato Gelisah/Cepat', 'Sotto Voce Berbisik', 'Grave Serius & Berat', 'Leggiero Ringan & Halus', 'Doloroso Pedih/Sedih', 'Furioso Sangat Marah', 'Amoroso Penuh Kasih', 'Misterioso Misterius', 'Manja'],
-  effects: ['Effect Glitch', 'Effect FX', 'Effect Helium', 'Effect Reverb', 'Effect Delay', 'Effect Distortion', 'Effect Bitcrush', 'Effect Flanger', 'Effect Phaser', 'Effect Chorus', 'Effect Wah-wah', 'Effect Tremolo', 'Effect Vibrato', 'Effect Auto-pan', 'Effect Gate', 'Effect Compression', 'Effect Limiter', 'Effect EQ High-pass', 'Effect EQ Low-pass', 'Effect EQ Band-pass', 'Effect Sidechain', 'Effect Reverse', 'Effect Pitch Shift', 'Effect Time Stretch', 'Effect Granular', 'Effect Lo-fi Vinyl', 'Effect Tape Saturation'],
-  vocals: ['Male', 'Female', 'Duo', 'Choir', 'Auto-tune', 'Robotic', 'Indie voice', 'Anak-anak', 'Berbisik', 'Berbicara', 'Menyanyi', 'Vocals Effect FX', 'Vocals Effect Glitch', 'Vocals Effect Helium', 'Vocals Effect Reverb', 'Rap', 'Vocals Lembut', 'Vocals Sensual', 'Vocals Manja'],
-  tempo: ['40-60 BPM', '60-80 BPM', '80-100 BPM', '100-120 BPM', 'Cepat 140+ BPM', 'Sangat Cepat 180+ BPM', 'Adagio Sangat Lambat', 'Andante Kecepatan Jalan', 'Moderato Sedang', 'Allegro Cepat & Ceria', 'Presto Sangat Cepat', 'Accelerando Semakin Cepat', 'Rubato Tempo Ekspresif', 'Staccato Terputus-putus', 'Legato Mengalir'],
+const vibePresets = {
+  "Sad Boy/Girl": { genre: ["Indie Pop", "Lo-fi"], moods: ["Sad", "Melancholic"], tempo: ["60-80 BPM"] },
+  "Phonk Viral": { genre: ["Phonk", "Trap"], moods: ["Aggressive", "Dark"], tempo: ["120-140 BPM"] },
+  "Gen Z Pop": { genre: ["Hyperpop", "Dance Pop"], moods: ["Energetic", "Happy"], tempo: ["140-160 BPM"] },
+  "Cinematic Dream": { genre: ["Orchestral", "Ambient"], moods: ["Dreamy", "Cinematic"], tempo: ["40-60 BPM"] },
 };
 
-const vibePresets: Record<string, Record<string, string[]>> = {
-  'Disco Vibe Tiktok': {
-    genre: ['Pop', 'EDM'],
-    intro: ['Beat drop'],
-    moods: ['Happy', 'Energetic'],
-    ekspresi: ['Powerful'],
-    vocals: ['Female'],
-    tempo: ['100-120 BPM']
-  },
-  'Dj Vibe Tiktok': {
-    genre: ['EDM', 'Trap', '808 Bass'],
-    intro: ['Beat drop', 'Viral TikTok intro'],
-    moods: ['Energetic', 'Trippy', 'Itens'],
-    ekspresi: ['Agitato Gelisah/Cepat'],
-    vocals: ['Auto-tune'],
-    tempo: ['Cepat 140+ BPM']
-  },
-  'Dangdut Vibe Tiktok': {
-    genre: ['Dangdut'],
-    intro: ['Viral TikTok intro'],
-    moods: ['Happy', 'Santai'],
-    ekspresi: ['Manja'],
-    vocals: ['Female'],
-    tempo: ['100-120 BPM']
-  },
-  'Orchestra Vibe Tiktok': {
-    genre: ['Orchestral', 'Megah'],
-    intro: ['Cinematic opening'],
-    moods: ['Heroik', 'Sinematik', 'Megah'],
-    ekspresi: ['Maestoso Agung/Mulia'],
-    vocals: ['Choir'],
-    tempo: ['40-60 BPM']
-  },
-  'HipHop Vibe Tiktok': {
-    genre: ['Hip Hop', 'Trap'],
-    intro: ['Phonk cowbell', 'Minimalist trap hi-hats'],
-    moods: ['Dark', 'Energetic', 'Agresif'],
-    ekspresi: ['Aggressive'],
-    vocals: ['Male'],
-    tempo: ['80-100 BPM']
-  },
-  'House Vibe Tiktok': {
-    genre: ['EDM', 'Fusion'],
-    intro: ['Ambient pad', 'Lo-fi vinyl crackle'],
-    moods: ['Chill', 'Dreamy', 'Peaceful'],
-    ekspresi: ['Soft'],
-    vocals: ['Female', 'Berbisik'],
-    tempo: ['100-120 BPM']
-  }
+const options = {
+  genre: ["Pop", "Indie", "Hip Hop", "Trap", "Phonk", "Hyperpop", "Lo-fi", "R&B", "Rock", "Orchestral", "Ambient", "Jazz", "Electronic", "Techno", "House"],
+  intro: ["Slow piano", "Cinematic opening", "Drum fill", "Synth swell", "Vocal chop", "Ambient noise", "Guitar riff", "Bass drop", "Silence", "Fade in"],
+  moods: ["Happy", "Sad", "Energetic", "Chill", "Dark", "Aggressive", "Dreamy", "Melancholic", "Romantic", "Epic", "Mysterious", "Tense", "Nostalgic", "Hopeful", "Calm"],
+  ekspresi: ["Soft", "Powerful", "Emotional", "Aggressive", "Whispered", "Smooth", "Rough", "Bright", "Dark", "Expressive", "Dolce", "Espressivo", "Staccato", "Legato"],
+  effects: ["Reverb", "Delay", "Distortion", "Autotune", "Chorus", "Flanger", "Phaser", "Bitcrush", "Vinyl crackle", "Telephone effect", "Underwater", "Echo"],
+  vocals: ["Male", "Female", "Duo", "Group", "Choir", "Whisper", "Scream", "Rap", "Melodic", "Harmonized", "Solo", "Instrumental"],
+  tempo: ["40-60 BPM", "60-80 BPM", "80-100 BPM", "100-120 BPM", "120-140 BPM", "140-160 BPM", "160-180 BPM", "180+ BPM"]
 };
 
 export default function App() {
   const [lyrics, setLyrics] = useState('');
   const [youtubeLink, setYoutubeLink] = useState('');
-  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
-  const [analyzing, setAnalyzing] = useState(false);
   const [selections, setSelections] = useState<Record<string, string[]>>({
     genre: [], intro: [], moods: [], ekspresi: [], effects: [], vocals: [], tempo: []
   });
   const [activePreset, setActivePreset] = useState<string | null>(null);
-  const [output, setOutput] = useState<{ style: string; lyrics: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+  const [output, setOutput] = useState<{ style: string, lyrics: string } | null>(null);
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
 
   const toggleSelection = (category: string, item: string) => {
+    setSelections(prev => ({
+      ...prev,
+      [category]: prev[category].includes(item)
+        ? prev[category].filter(i => i !== item)
+        : [...prev[category], item]
+    }));
     setActivePreset(null);
-    setSelections(prev => {
-      const current = prev[category];
-      return {
-        ...prev,
-        [category]: current.includes(item) ? current.filter(i => i !== item) : [...current, item]
-      };
-    });
   };
 
-  const applyPreset = (presetName: string) => {
-    const preset = vibePresets[presetName];
-    if (preset) {
-      setActivePreset(presetName);
-      setSelections({
-        genre: preset.genre || [],
-        intro: preset.intro || [],
-        moods: preset.moods || [],
-        ekspresi: preset.ekspresi || [],
-        effects: preset.effects || [],
-        vocals: preset.vocals || [],
-        tempo: preset.tempo || []
-      });
-    }
+  const applyPreset = (name: string) => {
+    const preset = vibePresets[name as keyof typeof vibePresets];
+    const newSelections = {
+      genre: [], intro: [], moods: [], ekspresi: [], effects: [], vocals: [], tempo: []
+    };
+    Object.entries(preset).forEach(([key, val]) => {
+      newSelections[key as keyof typeof newSelections] = val;
+    });
+    setSelections(newSelections);
+    setActivePreset(name);
   };
 
   const randomize = () => {
-    setActivePreset(null);
-    const randomSelections: Record<string, string[]> = {};
-    Object.keys(options).forEach(key => {
-      const opts = options[key as keyof typeof options];
-      randomSelections[key] = [opts[Math.floor(Math.random() * opts.length)]];
+    const newSelections = {} as Record<string, string[]>;
+    Object.entries(options).forEach(([category, items]) => {
+      const count = Math.floor(Math.random() * 2) + 1;
+      newSelections[category] = [...items].sort(() => 0.5 - Math.random()).slice(0, count);
     });
-    setSelections(randomSelections);
+    setSelections(newSelections);
+    setActivePreset(null);
   };
 
   const analyzeYouTubeLink = async () => {
-    if (!youtubeLink.trim()) {
-      alert('Please enter a YouTube link!');
-      return;
-    }
+    if (!youtubeLink.trim()) return;
     setAnalyzing(true);
+    setAnalysisResult(null);
+    
     try {
-      const aiPrompt = `Analyze the following YouTube video link: ${youtubeLink}.
-      Based on the content of the video, recommend the best music tags from the following list for each category:
-      ${JSON.stringify(options)}
-      
-      Return the recommended tags in a JSON format:
-      {
-        "genre": [],
-        "intro": [],
-        "moods": [],
-        "ekspresi": [],
-        "effects": [],
-        "vocals": [],
-        "tempo": []
-      }
-      Only return the JSON. Do not include any markdown formatting or extra text.`;
-      
-      const response = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: aiPrompt }),
+      const prompt = `Analyze this YouTube video: ${youtubeLink}. 
+      Based on its vibe, recommend the best music tags from these categories: ${JSON.stringify(options)}.
+      Return ONLY a JSON object with these keys: genre, intro, moods, ekspresi, effects, vocals, tempo.
+      The values should be arrays of strings selected from the provided options.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: { parts: [{ text: prompt }] },
+        config: {
+          tools: [{ googleSearch: {} }]
+        }
       });
+
+      const resultText = response.text || '{}';
+      const cleanJson = resultText.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(cleanJson);
       
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to analyze');
-      }
-      
-      const resultText = data.text || '{}';
-      setAnalysisResult(resultText);
-      
-      try {
-        const parsed = JSON.parse(resultText);
-        setSelections(parsed);
-      } catch (e) {
-        console.error("Failed to parse analysis result as JSON:", e);
-      }
+      setSelections(parsed);
+      setAnalysisResult(JSON.stringify(parsed, null, 2));
     } catch (error) {
       console.error("Analysis failed:", error);
-      setAnalysisResult(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setAnalysisResult(`Error: ${error instanceof Error ? error.message : 'Failed to analyze video'}`);
     } finally {
       setAnalyzing(false);
     }
   };
 
   const generate = async () => {
-    if (!lyrics.trim()) {
-      alert('Please enter lyrics first!');
-      return;
-    }
+    if (!lyrics.trim()) return;
     setLoading(true);
+    
     try {
-      // Enforce strict TikTok Gen Z vibe in the prompt construction
       const baseVibe = "STRICT TIKTOK GEN Z VIRAL AESTHETIC";
       const genreVibe = selections.genre.length > 0 ? `${selections.genre.join(' & ')} remixed for TikTok trends` : "TikTok viral style";
       
@@ -188,172 +127,302 @@ export default function App() {
         Tempo: ${selections.tempo.join(', ')}. 
         Intro: ${selections.intro.join(', ')}. 
         Production Rules: Heavy 808s, crisp high-end, catchy earworm hooks, 15-60s viral segment focus, modern Gen Z sound design, high quality, trending TikTok audio texture.`.substring(0, 950);
-      
+
       const aiPrompt = `You are a TikTok Gen Z music expert. 
-      Your task is to take the user's lyrics and ONLY add structure tags and style instructions.
+      User Lyrics: "${lyrics}"
       
       STRICT RULES:
-      1. Use ONLY the original words provided by the user: "${lyrics}".
-      2. DO NOT add any new lyrics, words, or sentences.
-      3. DO NOT change or rewrite any of the user's words.
-      4. ONLY add tags like [Intro], [Verse 1], [Chorus], [Verse 2], [Bridge], [Final Chorus], [Outro].
-      5. Distribute the user's existing text into these sections logically.
-      6. After each tag, add the style instructions in parentheses on a new line based on these settings:
-         - Genre: ${selections.genre.join(', ')}
-         - Mood: ${selections.moods.join(', ')}
-         - Expression: ${selections.ekspresi.join(', ')}
-         - Effects: ${selections.effects.join(', ')}
-         - Vocals: ${selections.vocals.join(', ')}
-         - Intro Style: ${selections.intro.join(', ')}
-         
-      7. TEMPO DYNAMIC RULE:
-         - Selected Tempo Ranges: ${selections.tempo.join(', ')}
-         - For EACH section (Verse, Chorus, etc.), you MUST assign a SPECIFIC BPM number.
-         - This number MUST fall within the selected ranges. 
-         - Example: If "60-80 BPM" is selected, you might assign 80 BPM to Verse, 60 BPM to Pre-chorus, 65 BPM to Bridge, etc.
-         - If multiple ranges are selected (e.g., "40-60 BPM" and "120-140 BPM"), ONLY pick numbers from those specific ranges.
-         - Mention the specific BPM in the style instructions for each section.
+      1. Use ONLY the original words. DO NOT add or change words.
+      2. Add structure tags: [Intro], [Verse 1], [Chorus], [Verse 2], [Bridge], [Final Chorus], [Outro].
+      3. After each tag, add style instructions in parentheses on a new line.
+      4. Assign a SPECIFIC BPM for each section within these ranges: ${selections.tempo.join(', ')}.
       
-      The goal is to format the user's EXACT lyrics into a TikTok-ready structure without any creative expansion, with dynamic BPMs per section.`;
+      Style Context:
+      - Genre: ${selections.genre.join(', ')}
+      - Mood: ${selections.moods.join(', ')}
+      - Expression: ${selections.ekspresi.join(', ')}
+      - Effects: ${selections.effects.join(', ')}
+      - Vocals: ${selections.vocals.join(', ')}`;
 
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: aiPrompt }),
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: aiPrompt,
       });
-      const data = await response.json();
-      setOutput({ style: stylePrompt, lyrics: data.text || '' });
+
+      setOutput({ style: stylePrompt, lyrics: response.text || '' });
     } catch (error) {
-      console.error("AI Generation failed:", error);
-      alert("AI Generation failed. Please check your connection.");
+      console.error("Generation failed:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const copy = (text: string) => navigator.clipboard.writeText(text);
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopyStatus(id);
+    setTimeout(() => setCopyStatus(null), 2000);
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
-      <header className="max-w-4xl mx-auto mb-12 text-center">
-        <div className="inline-block px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full text-xs font-bold text-purple-400 uppercase tracking-widest mb-4">
-          Strict TikTok Gen Z Mode Only
-        </div>
-        <h1 className="text-6xl font-black bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-4 tracking-tighter">
-          VibeGen AI
-        </h1>
-        <p className="text-slate-400 text-lg font-medium">
-          The <span className="text-pink-500">Only</span> AI Music Generator for TikTok Gen Z Viral Hits
-        </p>
-        <p className="text-slate-500 text-sm mt-2 font-mono">DEVELOPER: ALI MAKSUM</p>
-      </header>
+    <div className="min-h-screen bg-[#0a0502] text-slate-100 font-sans selection:bg-purple-500/30 overflow-x-hidden">
+      {/* Atmospheric Background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-900/20 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-900/20 rounded-full blur-[120px]" />
+        <div className="absolute top-[30%] right-[10%] w-[30%] h-[30%] bg-pink-900/10 rounded-full blur-[100px]" />
+      </div>
 
-      <main className="max-w-4xl mx-auto space-y-8">
-        <section className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl shadow-xl">
-          <textarea
-            value={lyrics}
-            onChange={(e) => setLyrics(e.target.value)}
-            placeholder="Enter your lyrics here..."
-            className="w-full h-32 bg-slate-900 border border-slate-700 rounded-xl p-4 text-slate-100 focus:ring-2 focus:ring-purple-500 outline-none mb-4"
-          />
+      <div className="relative z-10 max-w-5xl mx-auto px-4 py-12 md:py-20">
+        <header className="text-center mb-16">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full text-[10px] font-bold text-purple-400 uppercase tracking-[0.2em] mb-6 backdrop-blur-sm"
+          >
+            <Zap size={12} className="fill-current" />
+            Production Grade AI Engine
+          </motion.div>
           
-          <div className="flex gap-2 mb-4">
-            <input
-              type="text"
-              value={youtubeLink}
-              onChange={(e) => setYoutubeLink(e.target.value)}
-              placeholder="Paste YouTube link here..."
-              className="flex-grow bg-slate-900 border border-slate-700 rounded-xl p-4 text-slate-100 focus:ring-2 focus:ring-purple-500 outline-none"
-            />
-            <button onClick={analyzeYouTubeLink} className="px-6 py-3 bg-purple-600 rounded-xl font-bold text-white hover:bg-purple-700 transition">
-              {analyzing ? 'Analyzing...' : 'Analisis'}
-            </button>
-          </div>
+          <motion.h1 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-7xl md:text-8xl font-black tracking-tighter mb-6 bg-gradient-to-b from-white via-white to-white/40 bg-clip-text text-transparent"
+          >
+            VibeGen<span className="text-purple-500">.</span>AI
+          </motion.h1>
+          
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto font-light leading-relaxed"
+          >
+            Transform your lyrics into <span className="text-white font-medium">viral TikTok hits</span> using advanced audio analysis and Gen Z aesthetic grounding.
+          </motion.p>
+        </header>
 
-          {analysisResult && (
-            <div className="bg-slate-900 p-4 rounded-xl mb-4 border border-slate-700">
-              <h4 className="text-sm font-semibold text-slate-400 uppercase mb-2">Rekomendasi Pilihan Tag:</h4>
-              <pre className="text-sm text-slate-300 font-mono whitespace-pre-wrap">
-                {(() => {
-                  try {
-                    return JSON.stringify(JSON.parse(analysisResult), null, 2);
-                  } catch {
-                    return analysisResult;
-                  }
-                })()}
-              </pre>
-            </div>
-          )}
-          
-          <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Quick Presets: TikTok Vibes</h3>
-            <div className="flex flex-wrap gap-2">
-              {Object.keys(vibePresets).map(preset => (
-                <button
-                  key={preset}
-                  onClick={() => applyPreset(preset)}
-                  className={`px-4 py-2 border rounded-xl text-sm transition-all flex items-center gap-2 group ${
-                    activePreset === preset 
-                    ? 'bg-purple-600 border-purple-400 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]' 
-                    : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-purple-900/40 hover:border-purple-500/50'
-                  }`}
+        <main className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column: Input & Analysis */}
+          <div className="lg:col-span-7 space-y-8">
+            {/* Lyrics Input */}
+            <section className="bg-white/[0.03] backdrop-blur-xl border border-white/10 p-8 rounded-[32px] shadow-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                  <Music size={16} /> 01. Lyrics Input
+                </h2>
+              </div>
+              <textarea
+                value={lyrics}
+                onChange={(e) => setLyrics(e.target.value)}
+                placeholder="Paste your lyrics here..."
+                className="w-full h-48 bg-black/40 border border-white/5 rounded-2xl p-6 text-slate-200 placeholder:text-slate-600 focus:ring-2 focus:ring-purple-500/50 outline-none transition-all resize-none font-mono text-sm leading-relaxed"
+              />
+            </section>
+
+            {/* YouTube Analysis */}
+            <section className="bg-white/[0.03] backdrop-blur-xl border border-white/10 p-8 rounded-[32px] shadow-2xl">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2 mb-6">
+                <Youtube size={16} /> 02. Vibe Analysis
+              </h2>
+              <div className="flex gap-3 mb-6">
+                <div className="relative flex-grow">
+                  <input
+                    type="text"
+                    value={youtubeLink}
+                    onChange={(e) => setYoutubeLink(e.target.value)}
+                    placeholder="Paste YouTube reference link..."
+                    className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-slate-200 focus:ring-2 focus:ring-purple-500/50 outline-none transition-all"
+                  />
+                  <Youtube className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={20} />
+                </div>
+                <button 
+                  onClick={analyzeYouTubeLink}
+                  disabled={analyzing || !youtubeLink}
+                  className="px-8 bg-white text-black rounded-2xl font-bold hover:bg-purple-500 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  <Sparkles size={14} className={`${activePreset === preset ? 'text-white' : 'text-purple-400'} group-hover:scale-110 transition-transform`} />
-                  {preset}
+                  {analyzing ? <RefreshCw className="animate-spin" size={18} /> : <Zap size={18} />}
+                  {analyzing ? 'Analyzing' : 'Analyze'}
                 </button>
-              ))}
-            </div>
-          </div>
-        </section>
+              </div>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {Object.entries(options).map(([category, items]) => (
-            <div key={category} className="bg-white/5 backdrop-blur-md border border-white/10 p-4 rounded-2xl">
-              <h3 className="text-sm font-semibold text-slate-400 uppercase mb-3">{category}</h3>
-              <div className="flex flex-wrap gap-2">
-                {items.map(item => (
-                  <button
-                    key={item}
-                    onClick={() => toggleSelection(category, item)}
-                    className={`px-3 py-1 rounded-full text-sm transition-all ${selections[category].includes(item) ? 'bg-purple-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.5)]' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
+              <AnimatePresence>
+                {analysisResult && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
                   >
-                    {item}
+                    <div className="bg-purple-500/5 border border-purple-500/20 rounded-2xl p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">Analysis Result</span>
+                        <Info size={14} className="text-purple-500/50" />
+                      </div>
+                      <pre className="text-xs text-purple-200/70 font-mono whitespace-pre-wrap leading-relaxed">
+                        {analysisResult.startsWith('Error') ? analysisResult : JSON.stringify(JSON.parse(analysisResult), null, 2)}
+                      </pre>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </section>
+
+            {/* Presets */}
+            <section className="bg-white/[0.03] backdrop-blur-xl border border-white/10 p-8 rounded-[32px] shadow-2xl">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2 mb-6">
+                <Sparkles size={16} /> 03. Viral Presets
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {Object.keys(vibePresets).map(preset => (
+                  <button
+                    key={preset}
+                    onClick={() => applyPreset(preset)}
+                    className={`px-4 py-4 rounded-2xl text-xs font-bold transition-all border ${
+                      activePreset === preset 
+                      ? 'bg-purple-600 border-purple-400 text-white shadow-lg shadow-purple-500/20' 
+                      : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:border-white/10'
+                    }`}
+                  >
+                    {preset}
                   </button>
                 ))}
               </div>
-            </div>
-          ))}
-        </section>
+            </section>
+          </div>
 
-        <div className="flex gap-4 justify-center">
-          <button onClick={randomize} className="flex items-center gap-2 px-6 py-3 bg-slate-800 rounded-full hover:bg-slate-700 transition">
-            <RefreshCw size={18} /> Randomize
-          </button>
-          <button onClick={generate} className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-cyan-500 via-purple-600 to-pink-600 rounded-full font-black text-white hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] transition-all transform hover:scale-105 active:scale-95">
-            <Wand2 size={18} /> Generate Strict TikTok Vibe
-          </button>
-        </div>
-
-        {loading && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center text-purple-400">Generating vibe...</motion.div>}
-
-        {output && (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl relative">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-bold">Style Musik Prompt</h3>
-                <span className="text-xs text-slate-500">{output.style.length}/950</span>
+          {/* Right Column: Options & Output */}
+          <div className="lg:col-span-5 space-y-8">
+            {/* Tag Selection Grid */}
+            <section className="bg-white/[0.03] backdrop-blur-xl border border-white/10 p-8 rounded-[32px] shadow-2xl max-h-[600px] overflow-y-auto custom-scrollbar">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2 mb-8 sticky top-0 bg-[#0a0502]/80 backdrop-blur-md py-2 z-10">
+                <Zap size={16} /> 04. Style Matrix
+              </h2>
+              <div className="space-y-8">
+                {Object.entries(options).map(([category, items]) => (
+                  <div key={category}>
+                    <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] mb-4">{category}</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {items.map(item => (
+                        <button
+                          key={item}
+                          onClick={() => toggleSelection(category, item)}
+                          className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all border ${
+                            selections[category].includes(item) 
+                            ? 'bg-white text-black border-white shadow-lg shadow-white/10' 
+                            : 'bg-white/5 border-white/5 text-slate-500 hover:text-slate-300 hover:bg-white/10'
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
-              <textarea readOnly value={output.style} className="w-full h-24 bg-slate-900 border border-slate-700 rounded-xl p-4 text-sm font-mono" />
-              <button onClick={() => copy(output.style)} className="absolute top-8 right-8 p-2 bg-slate-800 rounded-lg hover:bg-slate-700"><Copy size={16} /></button>
+            </section>
+
+            {/* Actions */}
+            <div className="flex flex-col gap-4">
+              <button 
+                onClick={randomize}
+                className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-slate-400 hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={18} /> Randomize Matrix
+              </button>
+              <button 
+                onClick={generate}
+                disabled={loading || !lyrics}
+                className="w-full py-6 bg-gradient-to-r from-purple-600 to-pink-600 rounded-[24px] font-black text-white text-lg hover:shadow-[0_0_40px_rgba(168,85,247,0.4)] transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
+              >
+                {loading ? <RefreshCw className="animate-spin" size={24} /> : <Wand2 size={24} />}
+                {loading ? 'Generating Vibe...' : 'Generate Viral Vibe'}
+              </button>
             </div>
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl relative">
-              <h3 className="font-bold mb-2">Lirik Terstruktur</h3>
-              <textarea readOnly value={output.lyrics} className="w-full h-64 bg-slate-900 border border-slate-700 rounded-xl p-4 text-sm font-mono" />
-              <button onClick={() => copy(output.lyrics)} className="absolute top-8 right-8 p-2 bg-slate-800 rounded-lg hover:bg-slate-700"><Copy size={16} /></button>
-            </div>
-          </motion.div>
-        )}
-      </main>
+          </div>
+        </main>
+
+        {/* Output Section */}
+        <AnimatePresence>
+          {output && (
+            <motion.section 
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-20 space-y-8"
+            >
+              <div className="flex items-center gap-4 mb-8">
+                <div className="h-px flex-grow bg-gradient-to-r from-transparent to-white/10" />
+                <h2 className="text-2xl font-black tracking-tight flex items-center gap-3">
+                  <Zap className="text-purple-500" size={24} /> Generated Output
+                </h2>
+                <div className="h-px flex-grow bg-gradient-to-l from-transparent to-white/10" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Style Prompt */}
+                <div className="bg-white/[0.03] backdrop-blur-xl border border-white/10 p-8 rounded-[32px] relative group">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Style Musik Prompt</h3>
+                    <span className="text-[10px] font-mono text-slate-600">{output.style.length}/950</span>
+                  </div>
+                  <div className="bg-black/40 rounded-2xl p-6 font-mono text-sm text-purple-200/80 leading-relaxed min-h-[160px]">
+                    {output.style}
+                  </div>
+                  <button 
+                    onClick={() => copyToClipboard(output.style, 'style')}
+                    className="absolute top-8 right-8 p-3 bg-white/5 rounded-xl hover:bg-purple-600 transition-all text-slate-400 hover:text-white"
+                  >
+                    {copyStatus === 'style' ? <Check size={18} /> : <Copy size={18} />}
+                  </button>
+                </div>
+
+                {/* Structured Lyrics */}
+                <div className="bg-white/[0.03] backdrop-blur-xl border border-white/10 p-8 rounded-[32px] relative group">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Structured Lyrics</h3>
+                    <Music size={14} className="text-slate-600" />
+                  </div>
+                  <div className="bg-black/40 rounded-2xl p-6 font-mono text-sm text-slate-300 leading-relaxed min-h-[160px] whitespace-pre-wrap">
+                    {output.lyrics}
+                  </div>
+                  <button 
+                    onClick={() => copyToClipboard(output.lyrics, 'lyrics')}
+                    className="absolute top-8 right-8 p-3 bg-white/5 rounded-xl hover:bg-purple-600 transition-all text-slate-400 hover:text-white"
+                  >
+                    {copyStatus === 'lyrics' ? <Check size={18} /> : <Copy size={18} />}
+                  </button>
+                </div>
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        <footer className="mt-32 pt-12 border-t border-white/5 text-center space-y-4">
+          <p className="text-slate-600 text-xs font-medium tracking-[0.3em] uppercase">
+            Developed by <span className="text-slate-400">Ali Maksum</span>
+          </p>
+          <div className="flex justify-center gap-6 text-slate-700">
+            <a href="#" className="hover:text-purple-500 transition-colors"><Youtube size={20} /></a>
+            <a href="#" className="hover:text-purple-500 transition-colors"><Zap size={20} /></a>
+            <a href="#" className="hover:text-purple-500 transition-colors"><Sparkles size={20} /></a>
+          </div>
+        </footer>
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+      `}} />
     </div>
   );
 }
