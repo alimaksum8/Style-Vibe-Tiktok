@@ -103,9 +103,17 @@ export default function App() {
       
       setSelections(parsed);
       setAnalysisResult(JSON.stringify(parsed, null, 2));
-    } catch (error) {
+    } catch (error: any) {
       console.error("Analysis failed:", error);
-      setAnalysisResult(`Error: ${error instanceof Error ? error.message : 'Failed to analyze video'}`);
+      let friendlyMessage = "Gagal menganalisis video.";
+      
+      if (error?.message?.includes("429") || error?.message?.includes("QUOTA_EXHAUSTED") || error?.message?.includes("RESOURCE_EXHAUSTED")) {
+        friendlyMessage = "⚠️ Kuota API Terlampaui (Limit). Mohon tunggu 1-2 menit sebelum mencoba lagi, atau gunakan API Key berbayar untuk penggunaan tanpa batas.";
+      } else if (error?.message?.includes("online")) {
+        friendlyMessage = "⚠️ Koneksi internet terputus atau API tidak dapat dijangkau.";
+      }
+      
+      setAnalysisResult(friendlyMessage);
     } finally {
       setAnalyzing(false);
     }
@@ -146,12 +154,17 @@ export default function App() {
 
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: aiPrompt,
+        contents: { parts: [{ text: aiPrompt }] },
       });
 
       setOutput({ style: stylePrompt, lyrics: response.text || '' });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Generation failed:", error);
+      let friendlyMessage = "Gagal membuat lirik.";
+      if (error?.message?.includes("429") || error?.message?.includes("RESOURCE_EXHAUSTED")) {
+        friendlyMessage = "⚠️ Kuota API Terlampaui. Silakan tunggu sebentar.";
+      }
+      alert(friendlyMessage);
     } finally {
       setLoading(false);
     }
@@ -256,10 +269,15 @@ export default function App() {
                     <div className="bg-purple-500/5 border border-purple-500/20 rounded-2xl p-6">
                       <div className="flex items-center justify-between mb-4">
                         <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">Analysis Result</span>
-                        <Info size={14} className="text-purple-500/50" />
+                        <button 
+                          onClick={() => setAnalysisResult(null)}
+                          className="text-[10px] text-slate-500 hover:text-white transition-colors"
+                        >
+                          Clear
+                        </button>
                       </div>
-                      <pre className="text-xs text-purple-200/70 font-mono whitespace-pre-wrap leading-relaxed">
-                        {analysisResult.startsWith('Error') ? analysisResult : JSON.stringify(JSON.parse(analysisResult), null, 2)}
+                      <pre className={`text-xs font-mono whitespace-pre-wrap leading-relaxed ${analysisResult.includes('⚠️') ? 'text-orange-400 font-bold' : 'text-purple-200/70'}`}>
+                        {analysisResult.startsWith('{') ? JSON.stringify(JSON.parse(analysisResult), null, 2) : analysisResult}
                       </pre>
                     </div>
                   </motion.div>
