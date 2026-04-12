@@ -14,7 +14,8 @@ import {
 import { GoogleGenAI } from "@google/genai";
 
 // Initialize Gemini
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const API_KEY = process.env.GEMINI_API_KEY || '';
+const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 const vibePresets = {
   "Sad Boy/Girl": { genre: ["Indie Pop", "Lo-fi"], moods: ["Sad", "Melancholic"], tempo: ["60-80 BPM"] },
@@ -80,15 +81,21 @@ export default function App() {
 
   const analyzeYouTubeLink = async () => {
     if (!youtubeLink.trim()) return;
+    if (!API_KEY) {
+      setAnalysisResult("⚠️ API Key tidak ditemukan. Pastikan GEMINI_API_KEY sudah diatur di Environment Variables Vercel.");
+      return;
+    }
+    
     setAnalyzing(true);
     setAnalysisResult(null);
     
-    try {
-      const prompt = `Analyze this YouTube video: ${youtubeLink}. 
-      Based on its vibe, recommend the best music tags from these categories: ${JSON.stringify(options)}.
-      Return ONLY a JSON object with these keys: genre, intro, moods, ekspresi, effects, vocals, tempo.
-      The values should be arrays of strings selected from the provided options.`;
+    const prompt = `Analyze this YouTube video: ${youtubeLink}. 
+    Based on its vibe, recommend the best music tags from these categories: ${JSON.stringify(options)}.
+    Return ONLY a JSON object with these keys: genre, intro, moods, ekspresi, effects, vocals, tempo.
+    The values should be arrays of strings selected from the provided options.`;
 
+    try {
+      // Attempt 1: With Google Search Grounding (High Quota Usage)
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: { parts: [{ text: prompt }] },
@@ -104,16 +111,28 @@ export default function App() {
       setSelections(parsed);
       setAnalysisResult(JSON.stringify(parsed, null, 2));
     } catch (error: any) {
-      console.error("Analysis failed:", error);
-      let friendlyMessage = "Gagal menganalisis video.";
+      console.error("Primary analysis failed, trying fallback...", error);
       
-      if (error?.message?.includes("429") || error?.message?.includes("QUOTA_EXHAUSTED") || error?.message?.includes("RESOURCE_EXHAUSTED")) {
-        friendlyMessage = "⚠️ Kuota API Terlampaui (Limit). Mohon tunggu 1-2 menit sebelum mencoba lagi, atau gunakan API Key berbayar untuk penggunaan tanpa batas.";
-      } else if (error?.message?.includes("online")) {
-        friendlyMessage = "⚠️ Koneksi internet terputus atau API tidak dapat dijangkau.";
+      // Fallback: Try without Google Search Grounding (Lower Quota Usage)
+      try {
+        const fallbackResponse = await ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: { parts: [{ text: `(Fallback Mode) Guess the vibe for this video link: ${youtubeLink}. Options: ${JSON.stringify(options)}. Return ONLY JSON.` }] },
+        });
+        
+        const resultText = fallbackResponse.text || '{}';
+        const cleanJson = resultText.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(cleanJson);
+        
+        setSelections(parsed);
+        setAnalysisResult("(Mode Hemat Kuota Aktif)\n" + JSON.stringify(parsed, null, 2));
+      } catch (fallbackError: any) {
+        let friendlyMessage = "Gagal menganalisis video.";
+        if (fallbackError?.message?.includes("429") || fallbackError?.message?.includes("RESOURCE_EXHAUSTED")) {
+          friendlyMessage = "⚠️ Kuota API Benar-benar Habis. Google membatasi akun gratis Anda secara ketat. Mohon tunggu beberapa jam atau gunakan API Key lain.";
+        }
+        setAnalysisResult(friendlyMessage);
       }
-      
-      setAnalysisResult(friendlyMessage);
     } finally {
       setAnalyzing(false);
     }
